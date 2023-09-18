@@ -1,0 +1,24 @@
+//{
+//  "id": "api:protected",
+//  "upstream": {
+//    "preserve_host": true,
+//    "url": "http://hello:8090"
+//  },
+//  "match": {
+//    "url": "http://127.0.0.1:8080/<*>",
+//    "methods": ["GET", "POST", "PUT"]
+//  },
+//  "authenticators": [],
+//  "mutators": [
+//    {
+//      "handler": "noop"
+//    }
+//  ],
+//  "authorizer": {
+//    "handler": "remote_json",
+//    "config": {
+//      "remote": "http://127.0.0.1:9999/ok",
+//      "payload": "{\"subject\": \"{{ print .Subject }}\", \"resource\": \"{{ printIndex .MatchContext.RegexpCaptureGroups 0 }}\"}"
+//    }
+//  }
+//}

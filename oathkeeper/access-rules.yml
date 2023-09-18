@@ -1,0 +1,84 @@
+#token hop le
+#  eyJhbGciOiJSUzI1NiIsImtpZCI6IjE5MGFkIiwidHlwIjoiSldUIn0.eyJzY3AiOlsic2NvcGUtYSIsInNjb3BlLWIiXX0.A2-sdBNWGnXlRDaDZeS-kQDTG6r4it65jNk0Eifom4JaFbpaHbzJGXjBjdqvXGLeElAIBTrGQzm14u-tslmchuuoQWxE5U3B1YwXH2rlsJEXdCNP3Vy6NH-_R80CqLN5ngyOaEzIMUsQ6zCKIrek47jkbb_fJSKKSfj0SOxriro7q_7bgnNaAUzXgOQyszfsyb5wggBDYD7svWTXlKirk3SLQAhz-wWuzK5jFRYpzE3cYmIhJycAZg_a_FCaFKw-nF08CovggKmHj3Ke_WaEnW0gSfrAwmWa1L691tDQJfW8kkBPrVO39SPkCJDCxRtemOYU4zhonYKVGT32kYghAQ
+
+
+# Nếu bạn định nghĩa nhiều access-rule khác nhau cho cùng một URL (dù là tuyệt đối hay tương đối),
+#  Ory Oathkeeper sẽ xử lý access-rule đầu tiên khớp với yêu cầu và bỏ qua các access-rule khác.
+#
+- id: "api:protected"
+  upstream:
+    preserve_host: true
+    url: "http://hello:8090"
+  match:
+    url: "http://127.0.0.1:8080/<*>"
+    methods:
+      - GET
+      - POST
+      - PUT
+  authenticators:
+#    - handler: anonymous
+    - handler: jwt
+      config:
+        jwks_urls:
+          - file:///etc/config/oathkeeper/jwks.json
+        scope_strategy: exact
+        required_scope:
+          - scope-a
+          - scope-b
+#        trusted_issuers:
+#          - https://my-issuer.com/
+        allowed_algorithms:
+          - RS256
+
+  mutators:
+    - handler: noop
+  authorizer:
+#    handler: allow
+    handler: remote_json
+    config:
+      remote: http://httpbin.org/status/200
+      "payload": |
+              {
+                "subject": "{{ print .Subject }}",
+                "resource": "{{ printIndex .MatchContext.RegexpCaptureGroups 0 }}",
+                "claims": "{{ print .Extra.aud }}"
+              }
+
+# id test 2
+- id: "api:protected2"
+  upstream:
+    preserve_host: true
+    url: "http://hello:8090"
+  match:
+    url: "http://127.0.0.1:8080/hello"
+    methods:
+      - POST
+      - PUT
+  authenticators:
+    #    - handler: anonymous
+    - handler: jwt
+      config:
+        jwks_urls:
+          - file:///etc/config/oathkeeper/jwks.json
+        scope_strategy: exact
+        required_scope:
+          - scope-a
+          - scope-b
+        #        trusted_issuers:
+        #          - https://my-issuer.com/
+        allowed_algorithms:
+          - RS256
+
+  mutators:
+    - handler: noop
+  authorizer:
+    #    handler: allow
+    handler: remote_json
+    config:
+      remote: http://httpbin.org/status/200
+      "payload": |
+        {
+          "subject": "{{ print .Subject }}",
+          "resource": "{{ printIndex .MatchContext.RegexpCaptureGroups 0 }}",
+          "claims": "{{ print .Extra.aud }}"
+        }

@@ -1,0 +1,103 @@
+# level: Đây là mức độ log, trong ví dụ là debug. Cấu hình này xác định mức độ quan trọng của các thông điệp log.
+#  Các mức độ log thường bao gồm debug, info, warn, và error, với debug là mức độ log chi tiết nhất và error là mức độ log quan trọng nhất.
+# format: Đây là định dạng cho các thông điệp log
+log:
+  level: debug
+  format: json
+# cấu hình server oathkeeper
+#
+serve:
+  proxy:
+    cors: # có thể dùng hoặc không?
+      enabled: false
+      allowed_origins: # danh sách các origins được cho phép truy cap
+        - http://127.0.0.1:3001
+        - http://127.0.0.1:9999
+      allowed_methods:
+        - POST
+        - GET
+        - PUT
+        - PATCH
+        - DELETE
+      allowed_headers: # các header được cho phép
+        - Authorization
+        - Content-Type
+      exposed_headers: # Các tiêu đề HTTP được hiển thị cho trình duyệt
+        - Content-Type
+      allow_credentials: true # cho phép gửi thông tin xác thực như token, cookies
+      debug: true
+
+errors: # cấu hình cho việc xử lý lỗi
+  fallback: # Danh sách các loại lỗi mặc định sẽ được xử lý bằng định dạng JSON
+    - json
+
+  handlers: # Cấu hình cho các loại xử lý lỗi cụ thể
+    json:
+      enabled: true
+      config:
+        verbose: true
+
+access_rules: # Phần này quản lý cấu hình cho các quy tắc truy cập.
+  matching_strategy: glob # cách Oathkeeper so khớp các quy tắc truy cập.
+  # có 2 cách đó là
+  # glob:  Sử dụng cú pháp so khớp đơn giản giống như cú pháp dấu sao (*) và dấu chấm (.) để so khớp các đường dẫn hoặc mẫu URL
+  # exact: So khớp chính xác với đường dẫn yêu cầu
+  repositories: # danh sách các repository lưu trữ quy tắc truy cập
+    - file:///etc/config/oathkeeper/access-rules.yml
+#    - file://etc/config/oathkeeper/rules.json
+#    - https://path-to-my-rules/rules.json:
+authenticators:
+  jwt:
+    enabled: true
+    config:
+      jwks_urls:
+        - file:///etc/config/oathkeeper/jwks.json
+      scope_strategy: exact
+      required_scope:
+        - scope-a
+        - scope-b
+#      trusted_issuers:
+#        - https://my-issuer.com/
+      allowed_algorithms:
+        - RS256
+        - HS256
+#      token_from:
+#        -header: Authorization
+#        -query_parameter: auth-token
+#        -cookie: auth-token
+#      jwks_urls: # đường dẫn để lấy public_key
+#      jwks_max_wait: # thời gian chờ để lấy public_key, nếu qua thời gian này mà không được response, thì sẽ bỏ qua để thực hiện các yêu cầu khác
+#      jwks_ttl: 60 # thời gian sống của jwks được lưu trong cache
+#      scope_strategy: none # exact: kiểm tra chính xác ==
+#                      # wildcard: sử dụng *. Ví dụ : user:read:* và user:read:profile => pass
+#                      # hierarchic: user:read:profile và user:read => pass
+#
+#      allowed_algorithms:
+#        - RS256
+#      token_from:
+#        query_parameter: auth-token
+#  anonymous:
+#    enabled: true
+#    config:
+#      subject: guest
+###
+#  noop:
+#    enabled: true
+
+authorizers:
+  allow:
+    enabled: false
+  remote_json:
+    enabled: true
+    config:
+      remote: http://httpbin.org/status/200
+
+      payload: |
+        {
+          "subject": "{{ print .Subject }}",
+          "resource": "{{ printIndex .MatchContext.RegexpCaptureGroups 0 }}",
+          "claims": "{{ print .Extra.aud }}"
+        }
+mutators:
+  noop:
+    enabled: true
